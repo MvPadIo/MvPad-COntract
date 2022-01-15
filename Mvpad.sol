@@ -1351,12 +1351,7 @@ contract MvPad is Context, IERC20, Ownable {
     require(to != address(0), 'ERC20: transfer to the zero address');
     require(amount > 0, 'Transfer amount must be greater than zero');
     if (from != owner() && to != owner()) require(amount <= _maxTxAmount, 'Transfer amount exceeds the maxTxAmount.');
-    if (_isExcludedFromFee[to] == false && to != uniswapV2Pair && address(uniswapV2Router) != to) {
-      uint256 maxHoldingPerWallet = _tTotal.mul(330).div(10000);
-      uint256 expectedBalance = balanceOf(to).add(amount);
-      require(expectedBalance <= maxHoldingPerWallet, 'Cant hold more than 3.3%');
-    }
-
+    
     // is the token balance of this contract address over the min number of
     // tokens that we need to initiate a swap + liquidity lock?
     // also, don't get caught in a circular liquidity event.
