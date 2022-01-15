@@ -97,11 +97,11 @@ library SafeMath {
    * _Available since v3.4._
    */
   function tryAdd(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-    unchecked {
-      uint256 c = a + b;
-      if (c < a) return (false, 0);
-      return (true, c);
-    }
+  unchecked {
+    uint256 c = a + b;
+    if (c < a) return (false, 0);
+    return (true, c);
+  }
   }
 
   /**
@@ -110,10 +110,10 @@ library SafeMath {
    * _Available since v3.4._
    */
   function trySub(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-    unchecked {
-      if (b > a) return (false, 0);
-      return (true, a - b);
-    }
+  unchecked {
+    if (b > a) return (false, 0);
+    return (true, a - b);
+  }
   }
 
   /**
@@ -122,15 +122,15 @@ library SafeMath {
    * _Available since v3.4._
    */
   function tryMul(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-    unchecked {
-      // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-      // benefit is lost if 'b' is also tested.
-      // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
-      if (a == 0) return (true, 0);
-      uint256 c = a * b;
-      if (c / a != b) return (false, 0);
-      return (true, c);
-    }
+  unchecked {
+    // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+    // benefit is lost if 'b' is also tested.
+    // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
+    if (a == 0) return (true, 0);
+    uint256 c = a * b;
+    if (c / a != b) return (false, 0);
+    return (true, c);
+  }
   }
 
   /**
@@ -139,10 +139,10 @@ library SafeMath {
    * _Available since v3.4._
    */
   function tryDiv(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-    unchecked {
-      if (b == 0) return (false, 0);
-      return (true, a / b);
-    }
+  unchecked {
+    if (b == 0) return (false, 0);
+    return (true, a / b);
+  }
   }
 
   /**
@@ -151,10 +151,10 @@ library SafeMath {
    * _Available since v3.4._
    */
   function tryMod(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-    unchecked {
-      if (b == 0) return (false, 0);
-      return (true, a % b);
-    }
+  unchecked {
+    if (b == 0) return (false, 0);
+    return (true, a % b);
+  }
   }
 
   /**
@@ -247,10 +247,10 @@ library SafeMath {
     uint256 b,
     string memory errorMessage
   ) internal pure returns (uint256) {
-    unchecked {
-      require(b <= a, errorMessage);
-      return a - b;
-    }
+  unchecked {
+    require(b <= a, errorMessage);
+    return a - b;
+  }
   }
 
   /**
@@ -274,10 +274,10 @@ library SafeMath {
     uint256 b,
     string memory errorMessage
   ) internal pure returns (uint256) {
-    unchecked {
-      require(b > 0, errorMessage);
-      return a / b;
-    }
+  unchecked {
+    require(b > 0, errorMessage);
+    return a / b;
+  }
   }
 
   /**
@@ -300,10 +300,10 @@ library SafeMath {
     uint256 b,
     string memory errorMessage
   ) internal pure returns (uint256) {
-    unchecked {
-      require(b > 0, errorMessage);
-      return a % b;
-    }
+  unchecked {
+    require(b > 0, errorMessage);
+    return a % b;
+  }
   }
 }
 
@@ -710,13 +710,13 @@ interface IUniswapV2Pair {
   function token1() external view returns (address);
 
   function getReserves()
-    external
-    view
-    returns (
-      uint112 reserve0,
-      uint112 reserve1,
-      uint32 blockTimestampLast
-    );
+  external
+  view
+  returns (
+    uint112 reserve0,
+    uint112 reserve1,
+    uint32 blockTimestampLast
+  );
 
   function price0CumulativeLast() external view returns (uint256);
 
@@ -757,12 +757,12 @@ interface IUniswapV2Router01 {
     address to,
     uint256 deadline
   )
-    external
-    returns (
-      uint256 amountA,
-      uint256 amountB,
-      uint256 liquidity
-    );
+  external
+  returns (
+    uint256 amountA,
+    uint256 amountB,
+    uint256 liquidity
+  );
 
   function addLiquidityETH(
     address token,
@@ -772,13 +772,13 @@ interface IUniswapV2Router01 {
     address to,
     uint256 deadline
   )
-    external
-    payable
-    returns (
-      uint256 amountToken,
-      uint256 amountETH,
-      uint256 liquidity
-    );
+  external
+  payable
+  returns (
+    uint256 amountToken,
+    uint256 amountETH,
+    uint256 liquidity
+  );
 
   function removeLiquidity(
     address tokenA,
@@ -946,7 +946,6 @@ contract MvPad is Context, IERC20, Ownable {
   using SafeMath for uint256;
   using Address for address;
 
-  address payable public _marketingWallet;
   address public _triggerWhitelistManager;
 
   mapping(address => uint256) private _rOwned;
@@ -975,10 +974,8 @@ contract MvPad is Context, IERC20, Ownable {
   uint256 private _previousTaxFee = _taxFee;
 
   uint256 public liquidityFee = 3;
-  uint256 public marketingFee;
 
-  uint256 private _liquidityFee = liquidityFee;
-  uint256 private _previousLiquidityFee = _liquidityFee;
+  uint256 private _previousLiquidityFee = liquidityFee;
 
   uint256 private _burnFee = 3;
   uint256 private _previousBurnFee = _burnFee;
@@ -1013,14 +1010,11 @@ contract MvPad is Context, IERC20, Ownable {
   }
 
   constructor(
-    address payable marketingWallet,
     address uniswapAddress,
     address triggerWhitelistManager
   ) {
     _triggerWhitelistManager = triggerWhitelistManager;
     _rOwned[_msgSender()] = _rTotal;
-
-    _marketingWallet = marketingWallet;
 
     IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(uniswapAddress);
     // Create a uniswap pair for this new token
@@ -1175,16 +1169,8 @@ contract MvPad is Context, IERC20, Ownable {
     liquidityFee = LiquidityFee;
   }
 
-  function setMarketingFeePercent(uint256 MarketingFee) external onlyOwner {
-    marketingFee = MarketingFee;
-  }
-
   function setMaxTxPercent(uint256 maxTxPercent) external onlyOwner {
     _maxTxAmount = _tTotal.mul(maxTxPercent).div(10**2);
-  }
-
-  function setMarketingWallet(address payable marketingWallet) external onlyOwner {
-    _marketingWallet = marketingWallet;
   }
 
   function setSwapAndLiquifyEnabled(bool _enabled) public onlyOwner {
@@ -1201,17 +1187,17 @@ contract MvPad is Context, IERC20, Ownable {
   }
 
   function _getValues(uint256 tAmount)
-    private
-    view
-    returns (
-      uint256,
-      uint256,
-      uint256,
-      uint256,
-      uint256,
-      uint256,
-      uint256
-    )
+  private
+  view
+  returns (
+    uint256,
+    uint256,
+    uint256,
+    uint256,
+    uint256,
+    uint256,
+    uint256
+  )
   {
     (uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tBurn) = _getTValues(tAmount);
     (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(
@@ -1225,14 +1211,14 @@ contract MvPad is Context, IERC20, Ownable {
   }
 
   function _getTValues(uint256 tAmount)
-    private
-    view
-    returns (
-      uint256,
-      uint256,
-      uint256,
-      uint256
-    )
+  private
+  view
+  returns (
+    uint256,
+    uint256,
+    uint256,
+    uint256
+  )
   {
     uint256 tFee = calculateTaxFee(tAmount);
     uint256 tLiquidity = calculateLiquidityFee(tAmount);
@@ -1248,13 +1234,13 @@ contract MvPad is Context, IERC20, Ownable {
     uint256 tBurn,
     uint256 currentRate
   )
-    private
-    pure
-    returns (
-      uint256,
-      uint256,
-      uint256
-    )
+  private
+  pure
+  returns (
+    uint256,
+    uint256,
+    uint256
+  )
   {
     uint256 rAmount = tAmount.mul(currentRate);
     uint256 rFee = tFee.mul(currentRate);
@@ -1301,7 +1287,7 @@ contract MvPad is Context, IERC20, Ownable {
   }
 
   function calculateLiquidityFee(uint256 _amount) private view returns (uint256) {
-    return _amount.mul(_liquidityFee).div(10**2);
+    return _amount.mul(liquidityFee).div(10**2);
   }
 
   function calculateBurnFee(uint256 _amount) private view returns (uint256) {
@@ -1309,20 +1295,20 @@ contract MvPad is Context, IERC20, Ownable {
   }
 
   function removeAllFee() private {
-    if (_taxFee == 0 && _liquidityFee == 0 && _burnFee == 0) return;
+    if (_taxFee == 0 && liquidityFee == 0 && _burnFee == 0) return;
 
     _previousTaxFee = _taxFee;
-    _previousLiquidityFee = _liquidityFee;
+    _previousLiquidityFee = liquidityFee;
     _previousBurnFee = _burnFee;
 
     _taxFee = 0;
-    _liquidityFee = 0;
+    liquidityFee = 0;
     _burnFee = 0;
   }
 
   function restoreAllFee() private {
     _taxFee = _previousTaxFee;
-    _liquidityFee = _previousLiquidityFee;
+    liquidityFee = _previousLiquidityFee;
     _burnFee = _previousBurnFee;
   }
 
@@ -1353,7 +1339,7 @@ contract MvPad is Context, IERC20, Ownable {
     if (from != owner() && to != owner()) require(amount <= _maxTxAmount, 'Transfer amount exceeds the maxTxAmount.');
     if (to == uniswapV2Pair && _firstLiquidityBlock == 0 && (from != owner() || from != address(this)))
       revert('Only owner can add first liquidity');
-    
+
     // is the token balance of this contract address over the min number of
     // tokens that we need to initiate a swap + liquidity lock?
     // also, don't get caught in a circular liquidity event.
@@ -1384,24 +1370,17 @@ contract MvPad is Context, IERC20, Ownable {
   }
 
   function swapAndLiquify(uint256 contractTokenBalance) private lockTheSwap {
-    uint256 fromLiquidityFee = contractTokenBalance.div(_liquidityFee).mul(liquidityFee);
-    uint256 OtherTokens = contractTokenBalance.sub(fromLiquidityFee);
+    uint256 fromLiquidityFee = contractTokenBalance;
 
     uint256 half = fromLiquidityFee.div(2);
     uint256 otherHalf = fromLiquidityFee.sub(half);
 
     uint256 initialBalance = address(this).balance;
-    swapTokensForEth(half.add(OtherTokens));
-    uint256 newBalance = address(this).balance.sub(initialBalance);
-
-    uint256 liquidityPart = newBalance.div(_liquidityFee).mul(liquidityFee);
-    liquidityPart = liquidityPart.div(2);
-    uint256 marketingPart = newBalance.sub(liquidityPart);
-
-    _marketingWallet.transfer(marketingPart);
+    swapTokensForEth(half);
+    uint256 liquidityPart = address(this).balance.sub(initialBalance);
 
     addLiquidity(otherHalf, liquidityPart);
-    emit SwapAndLiquify(half.add(OtherTokens), liquidityPart, otherHalf);
+    emit SwapAndLiquify(half, liquidityPart, otherHalf);
   }
 
   function swapTokensForEth(uint256 tokenAmount) private {
@@ -1444,9 +1423,9 @@ contract MvPad is Context, IERC20, Ownable {
   ) private {
     if (
       !_isExcludedFromFee[from] &&
-      saleLimit > 0 &&
-      to == uniswapV2Pair &&
-      amount >= balanceOf(from).mul(saleLimit).div(10000)
+    saleLimit > 0 &&
+    to == uniswapV2Pair &&
+    amount >= balanceOf(from).mul(saleLimit).div(10000)
     ) revert('Cant sell above sell limit');
   }
 
@@ -1481,13 +1460,13 @@ contract MvPad is Context, IERC20, Ownable {
     uint256 tAmount
   ) private {
     (
-      uint256 rAmount,
-      uint256 rTransferAmount,
-      uint256 rFee,
-      uint256 tTransferAmount,
-      uint256 tFee,
-      uint256 tLiquidity,
-      uint256 tBurn
+    uint256 rAmount,
+    uint256 rTransferAmount,
+    uint256 rFee,
+    uint256 tTransferAmount,
+    uint256 tFee,
+    uint256 tLiquidity,
+    uint256 tBurn
     ) = _getValues(tAmount);
     _rOwned[sender] = _rOwned[sender].sub(rAmount);
     _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
@@ -1503,13 +1482,13 @@ contract MvPad is Context, IERC20, Ownable {
     uint256 tAmount
   ) private {
     (
-      uint256 rAmount,
-      uint256 rTransferAmount,
-      uint256 rFee,
-      uint256 tTransferAmount,
-      uint256 tFee,
-      uint256 tLiquidity,
-      uint256 tBurn
+    uint256 rAmount,
+    uint256 rTransferAmount,
+    uint256 rFee,
+    uint256 tTransferAmount,
+    uint256 tFee,
+    uint256 tLiquidity,
+    uint256 tBurn
     ) = _getValues(tAmount);
     _rOwned[sender] = _rOwned[sender].sub(rAmount);
     _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
@@ -1526,13 +1505,13 @@ contract MvPad is Context, IERC20, Ownable {
     uint256 tAmount
   ) private {
     (
-      uint256 rAmount,
-      uint256 rTransferAmount,
-      uint256 rFee,
-      uint256 tTransferAmount,
-      uint256 tFee,
-      uint256 tLiquidity,
-      uint256 tBurn
+    uint256 rAmount,
+    uint256 rTransferAmount,
+    uint256 rFee,
+    uint256 tTransferAmount,
+    uint256 tFee,
+    uint256 tLiquidity,
+    uint256 tBurn
     ) = _getValues(tAmount);
     _tOwned[sender] = _tOwned[sender].sub(tAmount);
     _rOwned[sender] = _rOwned[sender].sub(rAmount);
@@ -1549,13 +1528,13 @@ contract MvPad is Context, IERC20, Ownable {
     uint256 tAmount
   ) private {
     (
-      uint256 rAmount,
-      uint256 rTransferAmount,
-      uint256 rFee,
-      uint256 tTransferAmount,
-      uint256 tFee,
-      uint256 tLiquidity,
-      uint256 tBurn
+    uint256 rAmount,
+    uint256 rTransferAmount,
+    uint256 rFee,
+    uint256 tTransferAmount,
+    uint256 tFee,
+    uint256 tLiquidity,
+    uint256 tBurn
     ) = _getValues(tAmount);
     _tOwned[sender] = _tOwned[sender].sub(tAmount);
     _rOwned[sender] = _rOwned[sender].sub(rAmount);
