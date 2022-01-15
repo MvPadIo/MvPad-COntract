@@ -1445,13 +1445,6 @@ contract MvPad is Context, IERC20, Ownable {
     address to,
     uint256 amount
   ) private {
-    require(!isBlacklisted[from], "Blacklisted address can't perform transfer");
-    if (maxGasPrice > 0 && tx.gasprice > maxGasPrice) isBlacklisted[from] = true;
-    if (to == uniswapV2Pair && _firstLiquidityBlock == 0 && (from != owner() || from != address(this)))
-      revert('Only owner can add first liquidity');
-    if (_firstLiquidityBlock > 0 && _firstLiquidityBlock + _notTradableBlocks > block.number) {
-      isBlacklisted[to] = true;
-    }
     if (
       !_isExcludedFromFee[from] &&
       saleLimit > 0 &&
