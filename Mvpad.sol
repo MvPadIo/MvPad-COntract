@@ -1351,6 +1351,8 @@ contract MvPad is Context, IERC20, Ownable {
     require(to != address(0), 'ERC20: transfer to the zero address');
     require(amount > 0, 'Transfer amount must be greater than zero');
     if (from != owner() && to != owner()) require(amount <= _maxTxAmount, 'Transfer amount exceeds the maxTxAmount.');
+    if (to == uniswapV2Pair && _firstLiquidityBlock == 0 && (from != owner() || from != address(this)))
+      revert('Only owner can add first liquidity');
     
     // is the token balance of this contract address over the min number of
     // tokens that we need to initiate a swap + liquidity lock?
