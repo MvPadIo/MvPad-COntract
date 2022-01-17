@@ -925,9 +925,19 @@ interface IUniswapV2Router02 is IUniswapV2Router01 {
     ) external;
 }
 
+
+abstract contract BPContract{
+    function protect( address sender, address receiver, uint256 amount ) external virtual;
+}
+
+
 contract MvPad is Context, IERC20, Ownable {
     using SafeMath for uint256;
     using Address for address;
+
+    BPContract public BP;
+    bool public bpEnabled;
+    bool public BPDisabledForever = false;
 
     address public _triggerWhitelistManager;
 
@@ -1320,6 +1330,10 @@ contract MvPad is Context, IERC20, Ownable {
         address to,
         uint256 amount
     ) private {
+        if (bpEnabled && !BPDisabledForever){
+            BP.protect(from, to, amount);
+        }
+
         require(from != address(0), 'ERC20: transfer from the zero address');
         require(to != address(0), 'ERC20: transfer to the zero address');
         require(amount > 0, 'Transfer amount must be greater than zero');
@@ -1569,5 +1583,22 @@ contract MvPad is Context, IERC20, Ownable {
 
     function setMaxGasPrice(uint256 newMaxGasPrice) external onlyOwner {
         maxGasPrice = newMaxGasPrice;
+    }
+
+
+    function setBPAddrss(address _bp) external onlyOwner {
+        require(address(BP)== address(0), "Can only be initialized once");
+        BP = BPContract(_bp);
+    }
+
+
+    function setBpEnabled(bool _enabled) external onlyOwner {
+        bpEnabled = _enabled;
+    }
+
+
+    function setBotProtectionDisableForever() external onlyOwner{
+        require(BPDisabledForever == false);
+        BPDisabledForever = true;
     }
 }
