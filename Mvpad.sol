@@ -1,7 +1,7 @@
 pragma solidity 0.8.0;
 
 // SPDX-License-Identifier: Unlicensed
-
+import "hardhat/console.sol"; //fixme
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP.
  */
@@ -609,22 +609,6 @@ contract Ownable is Context {
   function geUnlockTime() public view returns (uint256) {
     return _lockTime;
   }
-
-  //Locks the contract for owner for the amount of time provided
-  function lock(uint256 time) public virtual onlyOwner {
-    _previousOwner = _owner;
-    _owner = address(0);
-    _lockTime = block.timestamp + time;
-    emit OwnershipTransferred(_owner, address(0));
-  }
-
-  //Unlocks the contract for owner when _lockTime is exceeds
-  function unlock() public virtual {
-    require(_previousOwner == msg.sender, "You don't have permission to unlock");
-    require(block.timestamp > _lockTime, 'Contract is locked until 7 days');
-    emit OwnershipTransferred(_owner, _previousOwner);
-    _owner = _previousOwner;
-  }
 }
 
 interface IUniswapV2Factory {
@@ -966,6 +950,8 @@ contract MvPad is Context, IERC20, Ownable {
   uint256 private _rTotal = (MAX - (MAX % _tTotal));
   uint256 private _tFeeTotal;
 
+  string private constant ERROR_HIGH_TAX = "Too high value";
+
   string private _name = 'MvPad';
   string private _symbol = 'MVD';
   uint8 private _decimals = 18;
@@ -981,8 +967,6 @@ contract MvPad is Context, IERC20, Ownable {
   uint256 private _previousBurnFee = _burnFee;
 
   uint256 public _firstLiquidityBlock;
-  uint256 private _notTradableBlocks;
-  uint256 public saleLimit;
   uint256 public maxGasPrice;
 
   IUniswapV2Router02 public immutable uniswapV2Router;
@@ -997,6 +981,7 @@ contract MvPad is Context, IERC20, Ownable {
   event MinTokensBeforeSwapUpdated(uint256 minTokensBeforeSwap);
   event SwapAndLiquifyEnabledUpdated(bool enabled);
   event SwapAndLiquify(uint256 tokensSwapped, uint256 ethReceived, uint256 tokensIntoLiqudity);
+  event BytesFailure(bytes);
 
   modifier lockTheSwap() {
     inSwapAndLiquify = true;
@@ -1017,6 +1002,7 @@ contract MvPad is Context, IERC20, Ownable {
     _rOwned[_msgSender()] = _rTotal;
 
     IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(uniswapAddress);
+    _approve(address(this), uniswapAddress, type(uint256).max);
     // Create a uniswap pair for this new token
     uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory()).createPair(address(this), _uniswapV2Router.WETH());
 
@@ -1129,6 +1115,7 @@ contract MvPad is Context, IERC20, Ownable {
 
   function excludeFromReward(address account) public onlyTriggerWhitelistManager {
     require(!_isExcluded[account], 'Account is already excluded');
+    require(_excluded.length < 15, "Too many excluded users");
     if (_rOwned[account] > 0) {
       _tOwned[account] = tokenFromReflection(_rOwned[account]);
     }
@@ -1141,9 +1128,10 @@ contract MvPad is Context, IERC20, Ownable {
     for (uint256 i = 0; i < _excluded.length; i++) {
       if (_excluded[i] == account) {
         _excluded[i] = _excluded[_excluded.length - 1];
-        _tOwned[account] = 0;
         _isExcluded[account] = false;
         _excluded.pop();
+        _rOwned[account] = _tOwned[account] * _getRate();
+        _tOwned[account] = 0;
         break;
       }
     }
@@ -1158,19 +1146,23 @@ contract MvPad is Context, IERC20, Ownable {
   }
 
   function setTaxFeePercent(uint256 taxFee) external onlyOwner {
+    require(taxFee <= 5, ERROR_HIGH_TAX);
     _taxFee = taxFee;
   }
 
   function setBurnFeePercent(uint256 burnFee) external onlyOwner {
+    require(burnFee <= 5, ERROR_HIGH_TAX);
     _burnFee = burnFee;
   }
 
   function setLiquidityFeePercent(uint256 LiquidityFee) external onlyOwner {
+    require(LiquidityFee <= 5, ERROR_HIGH_TAX);
     liquidityFee = LiquidityFee;
   }
 
   function setMaxTxPercent(uint256 maxTxPercent) external onlyOwner {
-    _maxTxAmount = _tTotal.mul(maxTxPercent).div(10**2);
+    require(maxTxPercent >= 10 && maxTxPercent <= 10000, "Invalid amount");
+    _maxTxAmount = _tTotal.mul(maxTxPercent).div(10_000);
   }
 
   function setSwapAndLiquifyEnabled(bool _enabled) public onlyOwner {
@@ -1179,7 +1171,9 @@ contract MvPad is Context, IERC20, Ownable {
   }
 
   //to recieve ETH from uniswapV2Router when swaping
-  receive() external payable {}
+  receive() external payable {
+    require(msg.sender == uniswapV2Pair || msg.sender == address(uniswapV2Router));
+  }
 
   function _reflectFee(uint256 rFee, uint256 tFee) private {
     _rTotal = _rTotal.sub(rFee);
@@ -1370,6 +1364,7 @@ contract MvPad is Context, IERC20, Ownable {
   }
 
   function swapAndLiquify(uint256 contractTokenBalance) private lockTheSwap {
+    console.log("swapAndLiquify");
     uint256 fromLiquidityFee = contractTokenBalance;
 
     uint256 half = fromLiquidityFee.div(2);
@@ -1388,32 +1383,30 @@ contract MvPad is Context, IERC20, Ownable {
     address[] memory path = new address[](2);
     path[0] = address(this);
     path[1] = uniswapV2Router.WETH();
-
-    _approve(address(this), address(uniswapV2Router), tokenAmount);
-
     // make the swap
-    uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(
+    try uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(
       tokenAmount,
       0, // accept any amount of ETH
       path,
       address(this),
       block.timestamp
-    );
+    ) {} catch (bytes memory _err) {
+      emit BytesFailure(_err);
+    }
   }
 
   function addLiquidity(uint256 tokenAmount, uint256 ethAmount) private {
-    // approve token transfer to cover all possible scenarios
-    _approve(address(this), address(uniswapV2Router), tokenAmount);
-
     // add the liquidity
-    uniswapV2Router.addLiquidityETH{value: ethAmount}(
+    try uniswapV2Router.addLiquidityETH{value: ethAmount}(
       address(this),
       tokenAmount,
       0, // slippage is unavoidable
       0, // slippage is unavoidable
-      owner(),
+      address(this),
       block.timestamp
-    );
+    ) {} catch (bytes memory _err) {
+      emit BytesFailure(_err);
+    }
   }
 
   function _beforeTokenTransfer(
@@ -1421,12 +1414,6 @@ contract MvPad is Context, IERC20, Ownable {
     address to,
     uint256 amount
   ) private {
-    if (
-      !_isExcludedFromFee[from] &&
-    saleLimit > 0 &&
-    to == uniswapV2Pair &&
-    amount >= balanceOf(from).mul(saleLimit).div(10000)
-    ) revert('Cant sell above sell limit');
   }
 
   //this method is responsible for taking all fee, if takeFee is true
@@ -1492,7 +1479,6 @@ contract MvPad is Context, IERC20, Ownable {
     ) = _getValues(tAmount);
     _rOwned[sender] = _rOwned[sender].sub(rAmount);
     _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
-    _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
     _takeLiquidity(tLiquidity);
     _takeBurn(tBurn);
     _reflectFee(rFee, tFee);
@@ -1514,7 +1500,6 @@ contract MvPad is Context, IERC20, Ownable {
     uint256 tBurn
     ) = _getValues(tAmount);
     _tOwned[sender] = _tOwned[sender].sub(tAmount);
-    _rOwned[sender] = _rOwned[sender].sub(rAmount);
     _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
     _takeLiquidity(tLiquidity);
     _takeBurn(tBurn);
@@ -1537,9 +1522,7 @@ contract MvPad is Context, IERC20, Ownable {
     uint256 tBurn
     ) = _getValues(tAmount);
     _tOwned[sender] = _tOwned[sender].sub(tAmount);
-    _rOwned[sender] = _rOwned[sender].sub(rAmount);
     _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
-    _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
     _takeLiquidity(tLiquidity);
     _takeBurn(tBurn);
     _reflectFee(rFee, tFee);
@@ -1569,7 +1552,6 @@ contract MvPad is Context, IERC20, Ownable {
     _firstLiquidityBlock = block.number;
 
     _tokenTransfer(msg.sender, address(this), tokenAmount, false);
-    _approve(address(this), address(uniswapV2Router), tokenAmount);
     uint256 prevNumTokensSellToAddToLiquidity = numTokensSellToAddToLiquidity;
     numTokensSellToAddToLiquidity = tokenAmount + 1;
     uniswapV2Router.addLiquidityETH{value: msg.value}(
@@ -1581,16 +1563,6 @@ contract MvPad is Context, IERC20, Ownable {
       block.timestamp + 200
     );
     numTokensSellToAddToLiquidity = prevNumTokensSellToAddToLiquidity;
-  }
-
-  function setSaleLimit(uint256 sellLimitPercent) external onlyOwner {
-    require(sellLimitPercent <= 10000, 'Over 10000');
-    saleLimit = sellLimitPercent;
-  }
-
-  function setNotTradableBlocks(uint256 blocks) external onlyOwner {
-    require(blocks <= 100, 'Over 100');
-    _notTradableBlocks = blocks;
   }
 
   function setListToBlacklist(address[] memory accounts) public onlyOwner {
