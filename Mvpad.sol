@@ -944,7 +944,6 @@ contract MvPad is Context, IERC20, Ownable {
     mapping(address => uint256) private _rOwned;
     mapping(address => uint256) private _tOwned;
     mapping(address => mapping(address => uint256)) private _allowances;
-    mapping(address => bool) public isBlacklisted;
 
     mapping(address => bool) private _isExcludedFromFee;
 
@@ -969,14 +968,12 @@ contract MvPad is Context, IERC20, Ownable {
     uint256 private _previousTaxFee = _taxFee;
 
     uint256 public liquidityFee = 3;
-
     uint256 private _previousLiquidityFee = liquidityFee;
 
     uint256 private _burnFee = 3;
     uint256 private _previousBurnFee = _burnFee;
 
-    uint256 public _firstLiquidityBlock;
-    uint256 public maxGasPrice;
+    bool public liquidityAdded = false;
 
     IUniswapV2Router02 public immutable uniswapV2Router;
     address public immutable uniswapV2Pair;
@@ -1337,7 +1334,7 @@ contract MvPad is Context, IERC20, Ownable {
         require(from != address(0), 'ERC20: transfer from the zero address');
         require(to != address(0), 'ERC20: transfer to the zero address');
         require(amount > 0, 'Transfer amount must be greater than zero');
-        if (to == uniswapV2Pair && _firstLiquidityBlock == 0 && (from != owner() || from != address(this)))
+        if (to == uniswapV2Pair && liquidityAdded == false && from != owner())
             revert('Only owner can add first liquidity');
 
         // is the token balance of this contract address over the min number of
@@ -1398,6 +1395,9 @@ contract MvPad is Context, IERC20, Ownable {
     }
 
     function addLiquidity(uint256 tokenAmount, uint256 ethAmount) private {
+        if(allowance(address(this), address(uniswapV2Router)) < tokenAmount) {
+            _approve(address(this), address(uniswapV2Router), type(uint256).max);
+        }
         // add the liquidity
         try uniswapV2Router.addLiquidityETH{value: ethAmount}(
             address(this),
@@ -1531,6 +1531,12 @@ contract MvPad is Context, IERC20, Ownable {
         emit Transfer(sender, recipient, tTransferAmount);
     }
 
+    function allowDEXTransactions() external onlyOwner {
+        require(IERC20(uniswapV2Pair).totalSupply() != 0, "Must add liquidity first");
+        require(liquidityAdded == false);
+        liquidityAdded = true;
+    }
+
     function withdrawToken(address _recipient, uint256 _amount) public onlyOwner returns (bool) {
         IERC20(address(this)).transfer(_recipient, _amount);
         return true;
@@ -1547,44 +1553,6 @@ contract MvPad is Context, IERC20, Ownable {
     function changeTriggerAmount(uint256 _numTokensSellToAddToLiquidity) external onlyTriggerWhitelistManager {
         numTokensSellToAddToLiquidity = _numTokensSellToAddToLiquidity;
     }
-
-    function addFirstLiquidity(uint256 tokenAmount) public payable onlyOwner {
-        require(_firstLiquidityBlock == 0, 'Already added');
-
-        _firstLiquidityBlock = block.number;
-
-        _tokenTransfer(msg.sender, address(this), tokenAmount, false);
-        uint256 prevNumTokensSellToAddToLiquidity = numTokensSellToAddToLiquidity;
-        numTokensSellToAddToLiquidity = tokenAmount + 1;
-        uniswapV2Router.addLiquidityETH{value: msg.value}(
-            address(this),
-            tokenAmount,
-            0, // slippage is unavoidable
-            0, // slippage is unavoidable
-            msg.sender,
-            block.timestamp + 200
-        );
-        numTokensSellToAddToLiquidity = prevNumTokensSellToAddToLiquidity;
-    }
-
-    function setListToBlacklist(address[] memory accounts) public onlyOwner {
-        for (uint256 i; i < accounts.length; i++) {
-            _setBlacklistedStatus(accounts[i], true);
-        }
-    }
-
-    function setBlacklistedStatus(address account, bool blacklistedStatus) external onlyOwner {
-        _setBlacklistedStatus(account, blacklistedStatus);
-    }
-
-    function _setBlacklistedStatus(address account, bool blacklistedStatus) internal {
-        isBlacklisted[account] = blacklistedStatus;
-    }
-
-    function setMaxGasPrice(uint256 newMaxGasPrice) external onlyOwner {
-        maxGasPrice = newMaxGasPrice;
-    }
-
 
     function setBPAddrss(address _bp) external onlyOwner {
         require(address(BP)== address(0), "Can only be initialized once");
