@@ -1378,6 +1378,9 @@ contract MvPad is Context, IERC20, Ownable {
     }
 
     function swapTokensForEth(uint256 tokenAmount) private {
+        if(allowance(address(this), address(uniswapV2Router)) < tokenAmount) {
+            _approve(address(this), address(uniswapV2Router), type(uint256).max);
+        }
         // generate the uniswap pair path of token -> weth
         address[] memory path = new address[](2);
         path[0] = address(this);
