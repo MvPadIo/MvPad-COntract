@@ -1540,11 +1540,6 @@ contract MvPad is Context, IERC20, Ownable {
         liquidityAdded = true;
     }
 
-    function withdrawToken(address _recipient, uint256 _amount) public onlyOwner returns (bool) {
-        IERC20(address(this)).transfer(_recipient, _amount);
-        return true;
-    }
-
     function transferETH(address payable _recipient) public onlyOwner {
         _recipient.transfer(address(this).balance);
     }
